@@ -4,7 +4,7 @@
 
 #include "jitd.hpp"
 #include "test.hpp"
-
+#include <string.h>
 using namespace std;
 
 typedef enum {

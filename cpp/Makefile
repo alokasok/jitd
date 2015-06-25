@@ -15,7 +15,7 @@ CPP_FLAGS = \
   -std=c++11  
 endif
 
-CPP = g++ -I ${INCLUDE_PATH} -g $(CPP_FLAGS)
+CPP = clang++ -I ${INCLUDE_PATH} -g $(CPP_FLAGS) -std=c++11 -lpthread
 
 all: driver workload_gen
 
