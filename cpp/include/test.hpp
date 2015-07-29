@@ -2,12 +2,17 @@
 #define _TEST_H_SHIELD
 
 #include <istream>
+#include "generator/generator.hpp"
+#include "generator/zipfian_generator.hpp"
+#include "generator/scrambled_zipfian_generator.hpp"
 #include "jitd.hpp"
+
 
 typedef Buffer<Record> RecordBuffer;
 typedef CogHandle<Record> RecordCogHandle;
 
 RecordBuffer build_buffer(int len, int max);
+RecordBuffer build_zipfian_buffer(int len, int max);
 RecordBuffer load_buffer(std::istream &input);
 RecordCogHandle array_for_buffer(RecordBuffer buff);
 RecordCogHandle build_random_array(int len, int max);

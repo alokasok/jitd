@@ -83,6 +83,7 @@ void run_update_thread(
 void run_test_thread(JITD<Record> *jitd, string file, int per_op_sleep_ms)
 {
   ifstream in(file);
+  cout<<"The file being read is "<<file<<"\n";
   timeval start, end;
   gettimeofday(&start, NULL);
   cout << "Start[" << file << "]" << endl;
@@ -101,7 +102,13 @@ RecordBuffer buffer_cmd(istream &toks)
     toks >> len >> max;
     return build_buffer(len,max);        
 
-  } else if(string("explicit") == fill) {
+  } 
+  else  if(string("zipfian") == fill){
+    int len, max;
+    toks >> len >> max;
+    return build_zipfian_buffer(len,max);  
+  }
+  else if(string("explicit") == fill) {
     return load_buffer(toks);
   
   } else if(string("file") == fill) {
@@ -219,7 +226,39 @@ int jitd_test(
           iter->seek(target);
         }
       }
-    } CASE("random_scan") {
+    }CASE("uniform_scan"){
+      int time_in_ms, max_key, key_cnt;
+      long int scan_count = 0;
+      timeval start, end;    
+      Record target;
+      target.value = NULL;
+      toks >> time_in_ms >> max_key >> key_cnt;
+      gettimeofday(&start, NULL);
+      gettimeofday(&end, NULL);
+      
+      cout << "Scanning for " << time_in_ms << " s in [0,"
+           << max_key << ") -> " << key_cnt << " keys/read" << endl;
+      ycsbc::ScrambledZipfianGenerator test_data(max_key);
+      while(total_time(start, end) < time_in_ms*1000){
+        Iterator<Record> iter = jitd.iterator();
+        int data= test_data.Next();
+        cout<<data<<endl;
+        target.key = data;
+        iter->seek(target);
+        for(; key_cnt > 0; key_cnt--) { iter->next(); }
+        scan_count++;
+        
+        gettimeofday(&end, NULL);
+      }
+      cout << "Uniform Scan: " << scan_count << " scans over "
+           << total_time(start, end)/(1000*1000) << " s" << endl 
+           << "Rate: " 
+             << ((1000*1000*scan_count) / total_time(start, end))
+             << " scans/sec" << endl;
+
+
+    } 
+    CASE("random_scan") {
       int time_in_ms, max_key, key_cnt;
       long int scan_count = 0;
       timeval start, end;
@@ -231,9 +270,11 @@ int jitd_test(
       
       cout << "Scanning for " << time_in_ms << " s in [0,"
            << max_key << ") -> " << key_cnt << " keys/read" << endl;
+      //exit(0);
       while(total_time(start, end) < time_in_ms*1000){
         Iterator<Record> iter = jitd.iterator();
         target.key = rand() % max_key;
+        cout<<target.key<<endl;
         iter->seek(target);
         for(; key_cnt > 0; key_cnt--) { iter->next(); }
         scan_count++;
@@ -255,7 +296,9 @@ int jitd_test(
       int delay_ms;
       string file;
       toks >> delay_ms >> file;
+      cout<<"spawn_slow reading from the file "<<file;
       threads.emplace_back(run_test_thread, &jitd, file, delay_ms);
+      //exit(0);
     
     } CASE("spawn_updates") {
       Key max_key;

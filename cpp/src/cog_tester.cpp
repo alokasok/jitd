@@ -14,6 +14,10 @@
 #include "rewrite.hpp"
 #include "policy.hpp"
 #include "policy/Cracker.hpp"
+#include "generator/generator.hpp"
+#include "generator/zipfian_generator.hpp"
+#include "generator/scrambled_zipfian_generator.hpp"
+
 
 using namespace std;
 using namespace std::placeholders;
@@ -22,11 +26,64 @@ using namespace std::placeholders;
 typedef Buffer<Record> RecordBuffer;
 typedef CogHandle<Record> RecordCogHandle;
 
+RecordBuffer build_zipfian_buffer(int len,int max)
+{
+  int i;
+  ycsbc::ZipfianGenerator test_data(max);
+  cout<<"\nInside the zipfian distribution code:\n";
+    int x;
+  RecordBuffer buff(new vector<Record>(len));
+  for(i = 0; i < len; i++){
+
+    x = test_data.Next();
+    //cout<<x<<endl;
+    (*buff)[i].key = x;
+    (*buff)[i].value = (Value)0xDEADBEEF;
+  }
+  return buff;
+}
+
+RecordBuffer build_scrambled_zipfian_buffer(int len,int max)
+{
+  int i;
+  ycsbc::ScrambledZipfianGenerator test_data(max);
+  cout<<"\nInside the zipfian distribution code:\n";
+    int x;
+  RecordBuffer buff(new vector<Record>(len));
+  for(i = 0; i < len; i++){
+
+    x = test_data.Next();
+    //cout<<x<<endl;
+    (*buff)[i].key = x;
+    (*buff)[i].value = (Value)0xDEADBEEF;
+  }
+  return buff;
+}
+
+RecordBuffer build_uniform_buffer(int len,int max)
+{
+  int i;
+  ycsbc::ScrambledZipfianGenerator test_data(max);
+  cout<<"\nInside the zipfian distribution code:\n";
+    int x;
+  RecordBuffer buff(new vector<Record>(len));
+  for(i = 0; i < len; i++){
+
+    x = test_data.Next();
+    //cout<<x<<endl;
+    (*buff)[i].key = x;
+    (*buff)[i].value = (Value)0xDEADBEEF;
+  }
+  return buff;
+}
+
+
 RecordBuffer build_buffer(int len, int max)
 {
   int i;
   RecordBuffer buff(new vector<Record>(len));
   for(i = 0; i < len; i++){
+
     (*buff)[i].key = rand() % max;
     (*buff)[i].value = (Value)0xDEADBEEF;
   }
@@ -51,6 +108,20 @@ RecordCogHandle array_for_buffer(RecordBuffer buff)
     new ArrayCog<Record>(buff, buff->begin(), buff->end()))));
 }
 
+RecordCogHandle build_zipfian_array(int len, int max)
+{
+  return array_for_buffer(build_zipfian_buffer(len, max));
+}
+
+RecordCogHandle build_uniform_array(int len, int max)
+{
+  return array_for_buffer(build_uniform_buffer(len, max));
+}
+
+RecordCogHandle build_scrambled_zipfian_array(int len, int max)
+{
+  return array_for_buffer(build_scrambled_zipfian_buffer(len, max));
+}
 
 RecordCogHandle build_random_array(int len, int max)
 {
@@ -86,14 +157,37 @@ void cog_test(istream &input)
         int len, max;
         toks >> len >> max;
         stack.push(build_random_array(len,max));        
-      } else if(string("explicit") == fill) {
+      }
+       else if (string("zipfian")==fill){
+          int len, max;
+          toks >> len >> max;
+          cout<<endl<<len<<" "<<max;
+          stack.push(build_zipfian_array(len,max));
+         //exit (EXIT_FAILURE);
+      }  
+      else if (string("scrambled_zipfian")==fill){
+          int len, max;
+          toks >> len >> max;
+          cout<<endl<<len<<" "<<max;
+          stack.push(build_scrambled_zipfian_array(len,max));
+         //exit (EXIT_FAILURE);
+      }
+      else if (string("uniform")==fill){
+          int len, max;
+          toks >> len >> max;
+          cout<<endl<<len<<" "<<max;
+          stack.push(build_uniform_array(len,max));
+         //exit (EXIT_FAILURE);
+      }  
+      else if(string("explicit") == fill) {
         stack.push(array_for_buffer(load_buffer(toks)));
       } else {
         cerr << "Invalid ArrayCog Fill Mode: " << fill << endl;
         exit(-1);
       }
       
-    } else if(string("concat") == op) {
+    }
+    else if(string("concat") == op) {
       CogHandle<Record> a = stack.top(); stack.pop();
       CogHandle<Record> b = stack.top(); stack.pop();
       
